@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "603398907729",
+    "project_id": "verexjewelryapp",
+    "storage_bucket": "verexjewelryapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603398907729:android:bb8063eb28ee330716d570",
+        "android_client_info": {
+          "package_name": "com.verex.jewelry"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCi2hd_aev86amtB_q7xK1scFeB95sTz0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
