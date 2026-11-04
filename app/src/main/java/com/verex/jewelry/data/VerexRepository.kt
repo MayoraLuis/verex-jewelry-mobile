@@ -1,189 +1,218 @@
 package com.verex.jewelry.data
 
+import android.content.Context
+import android.net.Uri
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.verex.jewelry.R
 import com.verex.jewelry.model.*
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
+import java.io.File
 
 object VerexRepository {
 
-    // Catálogo en memoria
-    private val catalogo: MutableList<Joya> = mutableListOf(
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    val catalogoJoyas: MutableList<Joya> = mutableListOf(
         Anillo(
-            id = "A001",
-            nombre = "Anillo Plata 925",
+            id = "A1",
+            nombre = "Anillo Solitario Circonia",
             materialBase = Material.PLATA_925,
             pesoGramos = 3.5,
-            precioBaseElaboracion = 25.0,
+            precioBaseElaboracion = 45.0,
             talla = 7,
             imagenRes = R.drawable.anillo_plata_1
         ),
-        Anillo(
-            id = "A002",
-            nombre = "Anillo Solitario Plata",
-            materialBase = Material.PLATA_925,
-            pesoGramos = 4.0,
-            precioBaseElaboracion = 45.0,
-            talla = 6,
-            imagenRes = R.drawable.anillo_plata_2
-        ),
         Cadena(
-            id = "C001",
-            nombre = "Set de Perlas y Cadena",
+            id = "C1",
+            nombre = "Cadena Figaro Eslabón Fino",
             materialBase = Material.PLATA_925,
-            pesoGramos = 8.5,
-            precioBaseElaboracion = 35.0,
-            longitudCm = 45,
+            pesoGramos = 8.0,
+            precioBaseElaboracion = 60.0,
+            longitudCm = 50,
+            imagenRes = R.drawable.cadena_plata
+        ),
+        Pulsera(
+            id = "P1",
+            nombre = "Pulsera Tejido",
+            materialBase = Material.PLATA_925,
+            pesoGramos = 6.0,
+            precioBaseElaboracion = 85.0,
+            longitudCm = 18,
+            imagenRes = R.drawable.cadena_plata
+        ),
+        Arito(
+            id = "AR1",
+            nombre = "Set de Perlas",
+            materialBase = Material.PLATA_925,
+            pesoGramos = 2.0,
+            precioBaseElaboracion = 30.0,
+            tipoCierre = "Presión",
             imagenRes = R.drawable.set_perlas
         ),
-        Cadena(
-            id = "P001",
-            nombre = "Pulsera Plata 925",
+        Reloj(
+            id = "R1",
+            nombre = "Reloj Cuarzo Silver",
             materialBase = Material.PLATA_925,
-            pesoGramos = 5.0,
-            precioBaseElaboracion = 28.0,
-            longitudCm = 18,
-            imagenRes = R.drawable.pulsera_plata
+            pesoGramos = 25.0,
+            precioBaseElaboracion = 150.0,
+            tipoMalla = "Acero/Plata",
+            imagenRes = R.drawable.logo
         )
     )
 
-    // Carrito de compras: Lista de pares (Joya, Cantidad)
-    private val carrito: MutableList<Pair<Joya, Int>> = mutableListOf()
+    val carrito: MutableList<Joya> = mutableListOf()
 
-    // Usuarios del sistema
-    private val usuarios: MutableList<Usuario> = mutableListOf(
-        Usuario(
-            id = "U001",
-            nombre = "Cliente Verex",
-            correo = "cliente@verex.com",
-            contrasena = "123456",
-            rol = RolUsuario.CLIENTE
-        ),
-        Usuario(
-            id = "U002",
-            nombre = "Administrador Taller",
-            correo = "admin@verex.com",
-            contrasena = "admin123",
-            rol = RolUsuario.ADMINISTRADOR
-        ),
-        Usuario(
-            id = "U003",
-            nombre = "Luis Mayora",
-            correo = "luis.mayorac@gmail.com",
-            contrasena = "123456",
-            rol = RolUsuario.CLIENTE
-        )
-    )
-
-    // Lista de pedidos inicializada con un pedido de demostración
-    private val pedidos: MutableList<Pedido> = mutableListOf(
-        Pedido(
-            idPedido = "PED-1024",
-            cliente = usuarios[2], // Luis Mayora
-            joya = catalogo[0],
-            cantidad = 1,
-            total = 37.75,
-            estado = EstadoPedido.RECIBIDO
-        )
-    )
-
-    var usuarioActual: Usuario? = null
-
-    // --- CATÁLOGO ---
-    fun obtenerCatalogo(): List<Joya> = catalogo.toList()
-
-    fun buscarJoyaPorId(id: String): Joya? {
-        return catalogo.find { it.id.equals(id.trim(), ignoreCase = true) }
-    }
-
-    fun agregarJoya(joya: Joya): Boolean {
-        return try {
-            catalogo.add(joya)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    // --- CARRITO ---
-    fun obtenerCarrito(): List<Pair<Joya, Int>> = carrito.toList()
-
-    fun agregarAlCarrito(joya: Joya, cantidad: Int = 1) {
-        val index = carrito.indexOfFirst { it.first.id.equals(joya.id, ignoreCase = true) }
-        if (index != -1) {
-            val actual = carrito[index]
-            carrito[index] = Pair(actual.first, actual.second + cantidad)
-        } else {
-            carrito.add(Pair(joya, cantidad))
-        }
-    }
-
-    fun actualizarCantidad(id: String, nuevaCantidad: Int) {
-        val index = carrito.indexOfFirst { it.first.id.equals(id.trim(), ignoreCase = true) }
-        if (index != -1) {
-            if (nuevaCantidad > 0) {
-                carrito[index] = Pair(carrito[index].first, nuevaCantidad)
-            } else {
-                carrito.removeAt(index)
-            }
-        }
+    fun agregarAlCarrito(joya: Joya) {
+        carrito.add(joya)
     }
 
     fun limpiarCarrito() {
         carrito.clear()
     }
 
-    // --- PEDIDOS & ADMIN ---
-    fun obtenerPedidosAdmin(): List<Pedido> = pedidos.toList()
-
-    fun agregarPedido(pedido: Pedido) {
-        pedidos.add(pedido)
-    }
-
-    fun registrarPedidosDesdeCarrito(costoEnvio: Double = 4.0) {
-        val cliente = usuarioActual ?: usuarios.first()
-        carrito.forEach { par ->
-            val joya = par.first
-            val cantidad = par.second
-            val totalItem = (joya.calcularPrecioFinal() * cantidad) + costoEnvio
-            val nuevoPedido = Pedido(
-                idPedido = "PED-" + (1000..9999).random(),
-                cliente = cliente,
-                joya = joya,
-                cantidad = cantidad,
-                total = totalItem,
-                estado = EstadoPedido.RECIBIDO
-            )
-            pedidos.add(nuevoPedido)
-        }
-    }
-
-    fun actualizarEstadoPedido(idPedido: String, nuevoEstado: EstadoPedido): Boolean {
-        val pedido = pedidos.find { it.idPedido.equals(idPedido.trim(), ignoreCase = true) }
-        return if (pedido != null) {
-            pedido.estado = nuevoEstado
-            true
-        } else {
-            false
-        }
-    }
-
-    // --- AUTENTICACIÓN ---
-    fun registrarUsuario(usuario: Usuario): Boolean {
-        val yaExiste = usuarios.any { it.correo.equals(usuario.correo.trim(), ignoreCase = true) }
-        if (yaExiste) return false
-        usuarios.add(usuario)
-        usuarioActual = usuario
-        return true
-    }
-
-    fun iniciarSesion(correo: String, contrasena: String): Usuario? {
-        val user = usuarios.find {
-            it.correo.equals(correo.trim(), ignoreCase = true) && it.contrasena == contrasena.trim()
-        }
-        usuarioActual = user
-        return user
-    }
-
     fun cerrarSesion() {
-        usuarioActual = null
+        auth.signOut()
+    }
+
+    fun obtenerUsuarioActualId(): String {
+        return auth.currentUser?.uid ?: ""
+    }
+
+    private val catalogoCompletoCache: MutableList<Joya> = mutableListOf()
+
+    fun buscarJoyaPorId(id: String): Joya? {
+        return catalogoCompletoCache.firstOrNull { it.id == id }
+            ?: catalogoJoyas.firstOrNull { it.id == id }
+            ?: catalogoJoyas.firstOrNull()
+    }
+
+    fun guardarImagenInterna(context: Context, uriOriginal: Uri, idProducto: String): String {
+        return try {
+            val archivoDestino = File(context.filesDir, "${idProducto}.jpg")
+            context.contentResolver.openInputStream(uriOriginal)?.use { input ->
+                archivoDestino.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            archivoDestino.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ""
+        }
+    }
+
+    suspend fun guardarJoyaEnFirestore(joyaDto: JoyaFirestore): Result<Unit> {
+        return try {
+            firestore.collection("catalogo")
+                .document(joyaDto.id)
+                .set(joyaDto)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun obtenerCatalogoEnTiempoReal(): Flow<List<Joya>> = callbackFlow {
+        val listener = firestore.collection("catalogo")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    trySend(catalogoJoyas)
+                    return@addSnapshotListener
+                }
+
+                val joyasRemotas = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        doc.toObject(JoyaFirestore::class.java)?.toJoya()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }
+
+                val combinadas = if (joyasRemotas.isEmpty()) {
+                    catalogoJoyas
+                } else {
+                    val idsRemotos = joyasRemotas.map { it.id }.toSet()
+                    joyasRemotas + catalogoJoyas.filter { it.id !in idsRemotos }
+                }
+
+                catalogoCompletoCache.clear()
+                catalogoCompletoCache.addAll(combinadas)
+                trySend(combinadas)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun guardarPedidoEnFirestore(pedido: Pedido): Result<Unit> {
+        return try {
+            firestore.collection("pedidos")
+                .document(pedido.id)
+                .set(pedido)
+                .await()
+            limpiarCarrito()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun obtenerPedidosEnTiempoReal(): Flow<List<Pedido>> = callbackFlow {
+        val listener = firestore.collection("pedidos")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                val lista = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        doc.toObject(Pedido::class.java)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }.sortedByDescending { it.fecha }
+                trySend(lista)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    fun obtenerPedidosDelCliente(usuarioId: String): Flow<List<Pedido>> = callbackFlow {
+        val listener = firestore.collection("pedidos")
+            .whereEqualTo("usuarioId", usuarioId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+                val lista = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        doc.toObject(Pedido::class.java)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        null
+                    }
+                }.sortedByDescending { it.fecha }
+                trySend(lista)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun actualizarEstadoPedido(pedidoId: String, nuevoEstado: String): Result<Unit> {
+        return try {
+            firestore.collection("pedidos")
+                .document(pedidoId)
+                .update("estado", nuevoEstado)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

@@ -1,364 +1,471 @@
 package com.verex.jewelry.ui.screens
 
-import androidx.compose.foundation.Canvas
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.verex.jewelry.R
+import coil.compose.AsyncImage
 import com.verex.jewelry.data.VerexRepository
-import com.verex.jewelry.model.*
+import com.verex.jewelry.model.JoyaFirestore
+import com.verex.jewelry.model.Material
 import com.verex.jewelry.ui.theme.*
+import kotlinx.coroutines.launch
+import java.util.Locale
+import com.verex.jewelry.model.Pedido
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminScreen(
-    onNavigateBack: () -> Unit,
-    onLogout: () -> Unit
+    onCerrarSesion: () -> Unit
 ) {
-    var listaPedidos by remember { mutableStateOf(VerexRepository.obtenerPedidosAdmin()) }
-    var mostrarDialogoAgregar by remember { mutableStateOf(false) }
+    var tabSeleccionada by remember { mutableIntStateOf(0) }
+    val pedidosFlow = remember { VerexRepository.obtenerPedidosEnTiempoReal() }
+    val listaPedidos by pedidosFlow.collectAsState(initial = emptyList())
+
+    val pedidosActivos = remember(listaPedidos) {
+        listaPedidos.filter { it.estado.trim().uppercase() != "ENVIADO" }
+    }
+
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Scaffold(
         containerColor = VerexGreen,
         topBar = {
             TopAppBar(
-                title = { Text("Panel de Control (Admin)", color = VerexWhite, fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = VerexWhite)
-                    }
-                },
+                title = { Text("Panel Administrativo", color = VerexWhite, fontWeight = FontWeight.Bold) },
                 actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar Sesión", tint = VerexWhite)
+                    IconButton(onClick = {
+                        VerexRepository.cerrarSesion()
+                        onCerrarSesion()
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Salir", tint = VerexWhite)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = VerexGreenDark)
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Tarjeta de Métricas / Ventas
-            item {
-                Card(
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, VerexWhite),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Ventas Mensuales ($)",
-                            color = VerexWhite,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Canvas(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp)
-                        ) {
-                            val valores = listOf(0.45f, 0.65f, 0.30f, 0.60f, 0.90f)
-                            val barraAncho = size.width / (valores.size * 2)
-                            val lineaBaseY = size.height - 10f
-
-                            // Línea de base
-                            drawLine(
-                                color = Color.White.copy(alpha = 0.5f),
-                                start = Offset(0f, lineaBaseY),
-                                end = Offset(size.width, lineaBaseY),
-                                strokeWidth = 2f
-                            )
-
-                            valores.forEachIndexed { index, porcentaje ->
-                                val x = index * (barraAncho * 2) + barraAncho / 2
-                                val alturaBarra = (lineaBaseY - 10f) * porcentaje
-                                val topY = lineaBaseY - alturaBarra
-
-                                drawRoundRect(
-                                    color = if (index == valores.lastIndex) Color.White else Color.White.copy(alpha = 0.7f),
-                                    topLeft = Offset(x, topY),
-                                    size = Size(barraAncho, alturaBarra),
-                                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Botón Agregar Joya al Inventario
-            item {
-                OutlinedButton(
-                    onClick = { mostrarDialogoAgregar = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = CircleShape,
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, VerexWhite),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = VerexWhite)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, tint = VerexWhite)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Agregar Nuevo Producto al Inventario",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            // Título de la sección
-            item {
-                Text(
-                    text = "Gestión de Pedidos Activos",
-                    color = VerexWhite,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+            TabRow(
+                selectedTabIndex = tabSeleccionada,
+                containerColor = VerexGreenDark,
+                contentColor = VerexWhite
+            ) {
+                Tab(
+                    selected = tabSeleccionada == 0,
+                    onClick = { tabSeleccionada = 0 },
+                    text = { Text("Dashboard", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                )
+                Tab(
+                    selected = tabSeleccionada == 1,
+                    onClick = { tabSeleccionada = 1 },
+                    text = { Text("Pedidos (${pedidosActivos.size})", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+                )
+                Tab(
+                    selected = tabSeleccionada == 2,
+                    onClick = { tabSeleccionada = 2 },
+                    text = { Text("Nuevo Prod.", fontWeight = FontWeight.Bold, fontSize = 13.sp) }
                 )
             }
 
-            // Lista reactiva de pedidos
-            if (listaPedidos.isEmpty()) {
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = VerexGreenDark),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
+            when (tabSeleccionada) {
+                0 -> DashboardAdmin(listaPedidos = listaPedidos)
+                1 -> {
+                    if (pedidosActivos.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No hay pedidos pendientes por procesar.", color = VerexWhite)
+                        }
+                    } else {
+                        LazyColumn(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text("No hay pedidos activos actualmente.", color = VerexWhite)
+                            itemsIndexed(pedidosActivos, key = { index, pedido -> if (pedido.id.isNotBlank()) "${pedido.id}_$index" else "$index" }) { _, pedido ->
+                                ItemPedidoAdmin(
+                                    pedido = pedido,
+                                    onActualizarEstado = { nuevoEstado ->
+                                        coroutineScope.launch {
+                                            val resultado = VerexRepository.actualizarEstadoPedido(pedido.id, nuevoEstado)
+                                            if (resultado.isSuccess) {
+                                                Toast.makeText(context, "Estado: $nuevoEstado", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, "Error al actualizar", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
-            } else {
-                items(listaPedidos) { pedido: Pedido ->
-                    var menuExpandido by remember { mutableStateOf(false) }
+                2 -> {
+                    FormularioNuevoProducto(
+                        onProductoAgregado = {
+                            Toast.makeText(context, "¡Producto agregado al catálogo!", Toast.LENGTH_SHORT).show()
+                            tabSeleccionada = 0
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
 
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = VerexGreenDark),
-                        modifier = Modifier.fillMaxWidth()
+@Composable
+fun DashboardAdmin(listaPedidos: List<Pedido>) {
+    val totalVentas = listaPedidos.sumOf { it.total }
+    val pedidosEnProceso = listaPedidos.count { it.estado == "EN_FABRICACION" || it.estado == "RECIBIDO" }
+    val pedidosCompletados = listaPedidos.count { it.estado == "ENVIADO" }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Text("Resumen de Operaciones", color = VerexWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TarjetaMetrica("Ventas Totales", "$${String.format(Locale.US, "%.2f", totalVentas)}", Color(0xFFFFD700), Modifier.weight(1f))
+            TarjetaMetrica("Total Pedidos", "${listaPedidos.size}", VerexWhite, Modifier.weight(1f))
+        }
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TarjetaMetrica("En Taller", "$pedidosEnProceso", Color(0xFF81D4FA), Modifier.weight(1f))
+            TarjetaMetrica("Enviados / Listos", "$pedidosCompletados", Color(0xFFA5D6A7), Modifier.weight(1f))
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = VerexGreenDark)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Desglose Histórico de Pedidos", color = VerexWhite, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+                FilaDetalleEstado("Recibidos", listaPedidos.count { it.estado == "RECIBIDO" })
+                FilaDetalleEstado("En Fabricación", listaPedidos.count { it.estado == "EN_FABRICACION" })
+                FilaDetalleEstado("Empaquetados", listaPedidos.count { it.estado == "EMPAQUETADO" })
+                FilaDetalleEstado("Enviados (Finalizados)", pedidosCompletados)
+            }
+        }
+    }
+}
+
+@Composable
+fun TarjetaMetrica(titulo: String, valor: String, colorValor: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = VerexGreenDark)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.Start) {
+            Text(text = titulo, color = VerexWhite.copy(alpha = 0.8f), fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = valor, color = colorValor, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun FilaDetalleEstado(nombre: String, cantidad: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = nombre, color = VerexWhite.copy(alpha = 0.85f), fontSize = 14.sp)
+        Text(text = "$cantidad", color = VerexWhite, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    }
+}
+
+@Composable
+fun ItemPedidoAdmin(
+    pedido: Pedido,
+    onActualizarEstado: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val estadosPosibles = listOf("RECIBIDO", "EN_FABRICACION", "EMPAQUETADO", "ENVIADO")
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = VerexGreenDark)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Cliente: ${pedido.clienteNombre}",
+                    color = VerexWhite,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Text(
+                    text = "$${String.format(Locale.US, "%.2f", pedido.total)}",
+                    color = Color(0xFFFFD700),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = "Detalle: ${pedido.itemsResumen}", color = VerexWhite.copy(alpha = 0.85f), fontSize = 13.sp)
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Estatus fabricación:", color = VerexWhite, fontSize = 13.sp)
+
+                Box {
+                    Button(
+                        onClick = { expanded = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = VerexInputGray)
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = pedido.idPedido,
-                                    color = VerexWhite,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 15.sp
-                                )
-                                Text(
-                                    text = "$${String.format("%.2f", pedido.total)}",
-                                    color = VerexWhite,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                )
-                            }
+                        Text(pedido.estado, color = VerexTextDark, fontWeight = FontWeight.Bold)
+                    }
 
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            Text(
-                                text = "Cliente: ${pedido.cliente.nombre}",
-                                color = VerexWhite.copy(alpha = 0.9f),
-                                fontSize = 13.sp
-                            )
-
-                            Text(
-                                text = "Producto: ${pedido.joya.nombre} (x${pedido.cantidad})",
-                                color = VerexWhite.copy(alpha = 0.85f),
-                                fontSize = 13.sp
-                            )
-
-                            Text(
-                                text = "Material: ${pedido.joya.materialBase.nombre}",
-                                color = VerexWhite.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Selector del estado del pedido
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Estado actual:",
-                                    color = VerexWhite,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-
-                                Box {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = VerexInputGray,
-                                        modifier = Modifier.clickable { menuExpandido = true }
-                                    ) {
-                                        Text(
-                                            text = pedido.estado.name,
-                                            color = VerexTextDark,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                        )
-                                    }
-
-                                    DropdownMenu(
-                                        expanded = menuExpandido,
-                                        onDismissRequest = { menuExpandido = false }
-                                    ) {
-                                        EstadoPedido.values().forEach { estado ->
-                                            DropdownMenuItem(
-                                                text = { Text(estado.name) },
-                                                onClick = {
-                                                    VerexRepository.actualizarEstadoPedido(pedido.idPedido, estado)
-                                                    listaPedidos = VerexRepository.obtenerPedidosAdmin()
-                                                    menuExpandido = false
-                                                }
-                                            )
-                                        }
-                                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(VerexInputGray)
+                    ) {
+                        estadosPosibles.forEach { est ->
+                            DropdownMenuItem(
+                                text = { Text(est, color = VerexTextDark, fontWeight = FontWeight.SemiBold) },
+                                onClick = {
+                                    expanded = false
+                                    onActualizarEstado(est)
                                 }
-                            }
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
 
-    // Diálogo para Registrar Nueva Joya
-    if (mostrarDialogoAgregar) {
-        var nombreProducto by remember { mutableStateOf("") }
-        var pesoTexto by remember { mutableStateOf("") }
-        var precioTexto by remember { mutableStateOf("") }
-        var materialElegido by remember { mutableStateOf(Material.PLATA_925) }
+@Composable
+fun FormularioNuevoProducto(
+    onProductoAgregado: () -> Unit
+) {
+    var nombre by remember { mutableStateOf("") }
+    var precioBase by remember { mutableStateOf("") }
+    var pesoGramos by remember { mutableStateOf("") }
+    var tipoJoya by remember { mutableStateOf("Anillo") }
+    var materialSeleccionado by remember { mutableStateOf(Material.PLATA_925) }
+    var imagenUri by remember { mutableStateOf<Uri?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-        AlertDialog(
-            onDismissRequest = { mostrarDialogoAgregar = false },
-            containerColor = VerexGreenDark,
-            title = {
-                Text("Nuevo Producto", color = VerexWhite, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column(
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imagenUri = uri
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Registrar Nueva Joya", color = VerexWhite, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(VerexInputGray)
+                .border(1.5.dp, VerexWhite.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                .clickable { photoPickerLauncher.launch("image/*") },
+            contentAlignment = Alignment.Center
+        ) {
+            if (imagenUri != null) {
+                AsyncImage(
+                    model = imagenUri,
+                    contentDescription = "Foto elegida",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    OutlinedTextField(
-                        value = nombreProducto,
-                        onValueChange = { nombreProducto = it },
-                        label = { Text("Nombre de la Joya") },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = VerexTextDark,
-                            unfocusedTextColor = VerexTextDark,
-                            focusedContainerColor = VerexInputGray,
-                            unfocusedContainerColor = VerexInputGray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = pesoTexto,
-                        onValueChange = { pesoTexto = it },
-                        label = { Text("Peso en Gramos (ej: 4.5)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = VerexTextDark,
-                            unfocusedTextColor = VerexTextDark,
-                            focusedContainerColor = VerexInputGray,
-                            unfocusedContainerColor = VerexInputGray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = precioTexto,
-                        onValueChange = { precioTexto = it },
-                        label = { Text("Precio Base Elaboración (ej: 30.0)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = VerexTextDark,
-                            unfocusedTextColor = VerexTextDark,
-                            focusedContainerColor = VerexInputGray,
-                            unfocusedContainerColor = VerexInputGray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Text("Toca para cambiar", color = Color.White, fontSize = 11.sp)
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val peso = pesoTexto.toDoubleOrNull() ?: 3.0
-                        val precio = precioTexto.toDoubleOrNull() ?: 25.0
-                        val nuevaJoya = Anillo(
-                            id = "JOY-" + (100..999).random(),
-                            nombre = if (nombreProducto.isNotBlank()) nombreProducto else "Nueva Joya Verex",
-                            materialBase = materialElegido,
-                            pesoGramos = peso,
-                            precioBaseElaboracion = precio,
-                            talla = 7,
-                            imagenRes = R.drawable.anillo_plata_1
-                        )
-                        VerexRepository.agregarJoya(nuevaJoya)
-                        mostrarDialogoAgregar = false
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = VerexWhite)
-                ) {
-                    Text("Guardar", color = VerexGreenDark, fontWeight = FontWeight.Bold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { mostrarDialogoAgregar = false }) {
-                    Text("Cancelar", color = VerexWhite)
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.AddPhotoAlternate,
+                        contentDescription = "Seleccionar Imagen",
+                        tint = VerexTextDark.copy(alpha = 0.6f),
+                        modifier = Modifier.size(38.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Toca para subir foto de la joya", color = VerexTextDark, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
             }
+        }
+
+        OutlinedTextField(
+            value = nombre,
+            onValueChange = { nombre = it },
+            label = { Text("Nombre del Producto") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = VerexInputGray,
+                unfocusedContainerColor = VerexInputGray,
+                focusedTextColor = VerexTextDark,
+                unfocusedTextColor = VerexTextDark
+            )
         )
+
+        OutlinedTextField(
+            value = precioBase,
+            onValueChange = { precioBase = it },
+            label = { Text("Precio Base de Elaboración ($)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = VerexInputGray,
+                unfocusedContainerColor = VerexInputGray,
+                focusedTextColor = VerexTextDark,
+                unfocusedTextColor = VerexTextDark
+            )
+        )
+
+        OutlinedTextField(
+            value = pesoGramos,
+            onValueChange = { pesoGramos = it },
+            label = { Text("Peso Estimado (Gramos)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = VerexInputGray,
+                unfocusedContainerColor = VerexInputGray,
+                focusedTextColor = VerexTextDark,
+                unfocusedTextColor = VerexTextDark
+            )
+        )
+
+        Text("Tipo de Joya:", color = VerexWhite, fontWeight = FontWeight.SemiBold)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf("Anillo", "Cadena", "Pulsera", "Arito", "Reloj").forEach { tipo ->
+                FilterChip(
+                    selected = tipoJoya == tipo,
+                    onClick = { tipoJoya = tipo },
+                    label = { Text(tipo) }
+                )
+            }
+        }
+
+        Text("Material Base:", color = VerexWhite, fontWeight = FontWeight.SemiBold)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Material.entries.forEach { mat ->
+                FilterChip(
+                    selected = materialSeleccionado == mat,
+                    onClick = { materialSeleccionado = mat },
+                    label = { Text(mat.nombre) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                val precio = precioBase.toDoubleOrNull() ?: 0.0
+                val peso = pesoGramos.toDoubleOrNull() ?: 0.0
+                val idGenerado = "PROD_${System.currentTimeMillis()}"
+
+                if (nombre.isNotBlank() && precio > 0) {
+                    coroutineScope.launch {
+                        val rutaPersistente = if (imagenUri != null) {
+                            VerexRepository.guardarImagenInterna(context, imagenUri!!, idGenerado)
+                        } else {
+                            ""
+                        }
+
+                        val joyaDto = JoyaFirestore(
+                            id = idGenerado,
+                            nombre = nombre,
+                            tipo = tipoJoya,
+                            material = materialSeleccionado.name,
+                            pesoGramos = peso,
+                            precioBase = precio,
+                            extraProp = if (tipoJoya == "Anillo") 7 else 18,
+                            imagenUri = rutaPersistente
+                        )
+
+                        val resultado = VerexRepository.guardarJoyaEnFirestore(joyaDto)
+                        if (resultado.isSuccess) {
+                            onProductoAgregado()
+                        } else {
+                            Toast.makeText(context, "Error al guardar en base de datos", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = VerexGreenDark)
+        ) {
+            Text("Guardar Joya en Catálogo", color = VerexWhite, fontWeight = FontWeight.Bold)
+        }
     }
 }

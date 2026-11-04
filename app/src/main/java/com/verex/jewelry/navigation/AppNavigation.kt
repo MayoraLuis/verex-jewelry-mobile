@@ -1,42 +1,34 @@
 package com.verex.jewelry.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.verex.jewelry.data.VerexRepository
-import com.verex.jewelry.model.RolUsuario
-import com.verex.jewelry.ui.screens.AdminScreen
-import com.verex.jewelry.ui.screens.CartScreen
-import com.verex.jewelry.ui.screens.HomeScreen
-import com.verex.jewelry.ui.screens.LoginScreen
-import com.verex.jewelry.ui.screens.QuoterScreen
-import com.verex.jewelry.ui.screens.RegisterScreen
+import com.verex.jewelry.ui.screens.*
 
 @Composable
-fun AppNavigation() {
-    val navController = rememberNavController()
-
+fun AppNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = Screen.Login.route
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
-                onNavigateToRegister = { navController.navigate(Screen.Register.route) },
-                onLoginSuccess = {
-                    val usuario = VerexRepository.usuarioActual
-                    if (usuario?.rol == RolUsuario.ADMINISTRADOR) {
-                        navController.navigate(Screen.Admin.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                        }
+                onLoginSuccess = { rol: String ->
+                    val destino = if (rol.trim().equals("admin", ignoreCase = true)) {
+                        Screen.Admin.route
                     } else {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Login.route) { inclusive = true }
-                        }
+                        Screen.Home.route
                     }
+                    navController.navigate(destino) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
                 }
             )
         }
@@ -48,55 +40,76 @@ fun AppNavigation() {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                onNavigateToLogin = { navController.popBackStack() }
+                onNavigateToLogin = {
+                    navController.popBackStack()
+                }
             )
         }
 
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToQuoter = { joyaId ->
+                onNavigateToQuoter = { joyaId: String ->
                     navController.navigate(Screen.Quoter.createRoute(joyaId))
                 },
-                onNavigateToCart = { navController.navigate(Screen.Cart.route) },
+                onNavigateToCart = {
+                    navController.navigate(Screen.Cart.route)
+                },
+                onNavigateToOrders = {
+                    navController.navigate(Screen.ClientOrders.route)
+                },
                 onLogout = {
+                    VerexRepository.cerrarSesion()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
             )
         }
+        composable("historial") {
+            HistorialScreen(
+                onNavigateBack = {
+                    // Regresa a la pantalla anterior (ej. Home o Carrito)
+                    navController.popBackStack()
+                }
+            )
+        }
 
         composable(
             route = Screen.Quoter.route,
-            arguments = listOf(
-                navArgument("joyaId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("joyaId") { type = NavType.StringType })
         ) { backStackEntry ->
             val joyaId = backStackEntry.arguments?.getString("joyaId") ?: ""
-            val joyaSeleccionada = VerexRepository.buscarJoyaPorId(joyaId)
+            val joyaSeleccionada = VerexRepository.buscarJoyaPorId(joyaId) ?: VerexRepository.catalogoJoyas.first()
 
             QuoterScreen(
                 joya = joyaSeleccionada,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToCart = { navController.navigate(Screen.Cart.route) }
+                onNavigateToCart = {
+                    navController.navigate(Screen.Cart.route)
+                }
             )
         }
 
         composable(Screen.Cart.route) {
             CartScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onOrderConfirmed = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Home.route) { inclusive = true }
+                onNavigateToOrders = {
+                    navController.navigate(Screen.ClientOrders.route) {
+                        popUpTo(Screen.Home.route)
                     }
                 }
             )
         }
 
+        composable(Screen.ClientOrders.route) {
+            HistorialScreen (
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Screen.Admin.route) {
             AdminScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onLogout = {
+                onCerrarSesion = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }

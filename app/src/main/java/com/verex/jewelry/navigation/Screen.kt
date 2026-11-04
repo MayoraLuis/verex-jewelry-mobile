@@ -5,9 +5,9 @@ sealed class Screen(val route: String) {
     object Register : Screen("register")
     object Home : Screen("home")
     object Cart : Screen("cart")
+    object ClientOrders : Screen("client_orders")
     object Admin : Screen("admin")
 
-    // Ruta base con parámetro para la definición en NavHost y función creadora
     object Quoter : Screen("quoter/{joyaId}") {
         fun createRoute(joyaId: String) = "quoter/$joyaId"
     }

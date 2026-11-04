@@ -1,7 +1,6 @@
 package com.verex.jewelry.ui.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,27 +10,39 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.GoogleAuthProvider
+import com.verex.jewelry.AuthManager
 import com.verex.jewelry.R
-import com.verex.jewelry.data.VerexRepository
 import com.verex.jewelry.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    onNavigateToRegister: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: (String) -> Unit,
+    onNavigateToRegister: () -> Unit
 ) {
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var mensajeError by remember { mutableStateOf<String?>(null) }
+    var estaCargando by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val authManager = remember { AuthManager() }
+    val context = LocalContext.current
 
     Scaffold(
         containerColor = VerexGreen
@@ -44,7 +55,6 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logotipo institucional
             Image(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo Verex",
@@ -74,6 +84,7 @@ fun LoginScreen(
                 },
                 label = { Text("Correo Electrónico") },
                 singleLine = true,
+                enabled = !estaCargando,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -100,6 +111,7 @@ fun LoginScreen(
                 },
                 label = { Text("Contraseña") },
                 singleLine = true,
+                enabled = !estaCargando,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 shape = RoundedCornerShape(16.dp),
@@ -116,7 +128,6 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Mensaje de Error si las credenciales fallan
             if (mensajeError != null) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
@@ -129,36 +140,116 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Botón de Iniciar Sesión
+            // Botón de Iniciar Sesión con Correo/Contraseña
             Button(
                 onClick = {
                     if (correo.isBlank() || contrasena.isBlank()) {
                         mensajeError = "Por favor, complete todos los campos."
-                    } else {
-                        // Verificación directa sobre Usuario?
-                        val usuario = VerexRepository.iniciarSesion(correo, contrasena)
-                        if (usuario != null) {
-                            onLoginSuccess()
+                        return@Button
+                    }
+
+                    estaCargando = true
+                    mensajeError = null
+
+                    coroutineScope.launch {
+                        val resultado = authManager.iniciarSesion(correo.trim(), contrasena.trim())
+                        estaCargando = false
+
+                        if (resultado.isSuccess) {
+                            val rol = resultado.getOrDefault("CLIENTE")
+                            onLoginSuccess(rol)
                         } else {
-                            mensajeError = "Credenciales incorrectas. Verifique correo y clave."
+                            val e = resultado.exceptionOrNull()
+                            mensajeError = "${e?.javaClass?.simpleName}: ${e?.localizedMessage ?: "Error desconocido"}"
                         }
                     }
                 },
+                enabled = !estaCargando,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = CircleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = VerexGreenDark)
             ) {
+                if (estaCargando) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = VerexWhite,
+                        strokeWidth = 2.5.dp
+                    )
+                } else {
+                    Text(
+                        text = "Entrar",
+                        color = VerexWhite,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Botón de Iniciar Sesión con Google
+            OutlinedButton(
+                onClick = {
+                    estaCargando = true
+                    mensajeError = null
+                    coroutineScope.launch {
+                        try {
+                            val credentialManager = CredentialManager.create(context)
+
+                            val googleIdOption = GetGoogleIdOption.Builder()
+                                .setFilterByAuthorizedAccounts(false)
+                                .setServerClientId("603398907729-m93359t1qi2ef4lp6s4b66coaedccf07.apps.googleusercontent.com")
+                                .build()
+
+                            val getCredentialRequest = GetCredentialRequest.Builder()
+                                .addCredentialOption(googleIdOption)
+                                .build()
+
+                            val result = credentialManager.getCredential(context, getCredentialRequest)
+                            val credential = result.credential
+
+                            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                val firebaseCredential = GoogleAuthProvider.getCredential(googleIdTokenCredential.idToken, null)
+
+                                val resultado = authManager.iniciarSesionConGoogle(firebaseCredential)
+                                estaCargando = false
+
+                                if (resultado.isSuccess) {
+                                    val rol = resultado.getOrDefault("CLIENTE")
+                                    onLoginSuccess(rol)
+                                } else {
+                                    val e = resultado.exceptionOrNull()
+                                    mensajeError = "${e?.javaClass?.simpleName}: ${e?.localizedMessage ?: "Error desconocido"}"
+                                }
+                            } else {
+                                estaCargando = false
+                                mensajeError = "Tipo de credencial no soportado."
+                            }
+                        } catch (e: Exception) {
+                            estaCargando = false
+                            mensajeError = "Error: ${e.javaClass.simpleName} - ${e.localizedMessage}"
+                        }
+                    }
+                },
+                enabled = !estaCargando,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VerexWhite)
+            ) {
                 Text(
-                    text = "Entrar",
+                    text = "Iniciar Sesión con Google",
                     color = VerexWhite,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Enlace para ir al Registro
             Row(
@@ -174,7 +265,9 @@ fun LoginScreen(
                     color = VerexWhite,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    modifier = Modifier.clickable { onNavigateToRegister() }
+                    modifier = Modifier.clickable(enabled = !estaCargando) {
+                        onNavigateToRegister()
+                    }
                 )
             }
         }

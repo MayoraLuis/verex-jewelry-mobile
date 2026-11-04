@@ -1,5 +1,4 @@
 package com.verex.jewelry.ui.theme
-
 import androidx.compose.ui.graphics.Color
 
 val VerexGreen = Color(0xFF809B49)
