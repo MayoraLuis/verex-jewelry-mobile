@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app/src/main/res/drawable/logo.png" alt="Verex Jewelry Logo" width="220" />
+  <img src="app/src/main/res/drawable/logo.jpg" alt="Verex Jewelry Logo" width="220" />
   <h1>Verex Jewelry App (Android)</h1>
   <p><strong>Aplicación móvil nativa para la personalización, cotización y gestión de joyería fina</strong></p>
   <p>Desarrollada con <strong>Jetpack Compose</strong> y arquitectura reactiva conectada a <strong>Firebase</strong>.</p>
