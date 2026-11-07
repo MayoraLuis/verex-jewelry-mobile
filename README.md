@@ -12,9 +12,23 @@
   </p>
 </div>
 
+## 📝 Descripción del Proyecto
+
+**Verex Jewelry App** es una aplicación móvil desarrollada nativamente para Android utilizando **Jetpack Compose** y **Kotlin**. Actualmente, la aplicación cuenta con las siguientes características y funcionalidades principales:
+
+* **🔐 Autenticación Segura:** Sistema de inicio de sesión y registro respaldado por Firebase Auth. Soporta acceso mediante:
+    * Correo electrónico y contraseña.
+    * Cuenta de Google.
+    * Cuenta de Facebook.
+* **💍 Catálogo de Productos:** Exploración de joyas con interfaz moderna, detalles de precios y opción para ver más información.
+* **🧮 Cotizador Personalizado:** Herramienta interactiva para calcular el precio de piezas a medida con un desglose claro.
+* **🛒 Carrito de Compras:** Gestión de pedidos con control dinámico de cantidades y la capacidad de adjuntar fotos de referencia desde la galería del dispositivo.
+* **⚙️ Panel Administrativo:** Módulo dedicado con campos de texto estilizados para la creación y publicación de nuevas joyas en el catálogo.
+
+
 ---
 
-##  Enlaces de Entrega
+##  Enlaces de Entrega / Etapa3_Avance1_Foro1
 
 <ul>
   <li><strong>Repositorio Oficial:</strong> <a href="https://github.com/MayoraLuis/verex-jewelry-mobile.git">https://github.com/MayoraLuis/verex-jewelry-mobile.git</a></li>
@@ -120,6 +134,23 @@ com.verex.jewelry/
 │   └── theme/             # Sistema de diseño, paleta de colores y tipografía
 └── MainActivity.kt        # Punto de entrada de la aplicación
 </pre>
+
+
+## 📱 Interfaz de Usuario (Mockups)
+
+A continuación se presentan los diseños de las pantallas principales de Verex Jewelry App:
+
+<div align="center">
+  <img src="assets/mockups/mockup_login.png" alt="Login" width="220" />
+  <img src="assets/mockups/mockup_register.png" alt="Registrate" width="220" />
+  <img src="assets/mockups/mockup_home.png" alt="Catálogo" width="220" />
+  <img src="assets/mockups/mockup_cart.png" alt="Carrito" width="220" />
+  <img src="assets/mockups/mockup_dashboard.png" alt="Panel Admin Dashboard" width="220" />
+  <img src="assets/mockups/mockup_adminPedidos.png" alt="Panel Admin Pedidos" width="220" />
+  <img src="assets/mockups/mockup_MisPedidos.png" alt="Panel Admin Mis Pedidos" width="220" />
+  <img src="assets/mockups/mockup_NvoPedido.png" alt="Panel Admin Nuevo Pedido" width="220" />
+  <img src="assets/mockups/mockup_cotizador.png" alt="Cotizador" width="220" />
+</div>
 
 ---
 
