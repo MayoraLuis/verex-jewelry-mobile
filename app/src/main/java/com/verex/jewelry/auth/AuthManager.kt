@@ -126,7 +126,7 @@ class AuthManager {
         }
     }
 
-    // 3. NUEVO: Inicio de Sesión con Google
+    // 3. Inicio de Sesión con Google
     suspend fun iniciarSesionConGoogle(credential: AuthCredential): Result<String> {
         return try {
             val authResult = withTimeout(5000L) {
@@ -169,7 +169,50 @@ class AuthManager {
         }
     }
 
-    // 4. Cerrar Sesión
+    // 4. NUEVO: Inicio de Sesión con Facebook
+    suspend fun iniciarSesionConFacebook(credential: AuthCredential): Result<String> {
+        return try {
+            val authResult = withTimeout(5000L) {
+                auth.signInWithCredential(credential).await()
+            }
+            val firebaseUser = authResult.user ?: throw Exception("No se pudo autenticar con Facebook")
+            val uid = firebaseUser.uid
+            val correo = firebaseUser.email ?: "correo_facebook@desconocido.com"
+            val nombre = firebaseUser.displayName ?: "Cliente Facebook"
+
+            val correoTrim = correo.trim().lowercase()
+            val esAdmin = correoTrim == "admin@verex.com" || correoTrim.contains("admin")
+            val rolPorDefecto = if (esAdmin) "admin" else "CLIENTE"
+
+            // Validar o registrar en Firestore
+            val rol = try {
+                withTimeout(3000L) {
+                    val doc = firestore.collection("usuarios").document(uid).get().await()
+                    if (!doc.exists()) {
+                        val datosUsuario = hashMapOf<String, Any>(
+                            "id" to uid,
+                            "nombre" to nombre,
+                            "correo" to correo,
+                            "rol" to rolPorDefecto
+                        )
+                        firestore.collection("usuarios").document(uid).set(datosUsuario).await()
+                        rolPorDefecto
+                    } else {
+                        val rolDoc = doc.getString("rol")
+                        rolDoc ?: rolPorDefecto
+                    }
+                }
+            } catch (_: Exception) {
+                rolPorDefecto
+            }
+
+            Result.success(rol)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 5. Cerrar Sesión
     fun cerrarSesion() {
         auth.signOut()
     }

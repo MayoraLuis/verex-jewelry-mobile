@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -320,9 +321,9 @@ fun FormularioNuevoProducto(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(VerexInputGray)
-                .border(1.5.dp, VerexWhite.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                .border(1.5.dp, VerexWhite.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
                 .clickable { photoPickerLauncher.launch("image/*") },
             contentAlignment = Alignment.Center
         ) {
@@ -356,45 +357,60 @@ fun FormularioNuevoProducto(
             }
         }
 
+        // Campo Nombre del Producto con borde redondeado y fondo blanco
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
-            label = { Text("Nombre del Producto") },
-            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Nombre del Producto", color = Color.Gray) },
+            singleLine = true,
+            shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = VerexInputGray,
-                unfocusedContainerColor = VerexInputGray,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
                 focusedTextColor = VerexTextDark,
                 unfocusedTextColor = VerexTextDark
-            )
+            ),
+            modifier = Modifier.fillMaxWidth().height(56.dp)
         )
 
+        // Campo Precio Base con borde redondeado y fondo blanco
         OutlinedTextField(
             value = precioBase,
             onValueChange = { precioBase = it },
-            label = { Text("Precio Base de Elaboración ($)") },
+            placeholder = { Text("Precio Base de Elaboración ($)", color = Color.Gray) },
+            singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = VerexInputGray,
-                unfocusedContainerColor = VerexInputGray,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
                 focusedTextColor = VerexTextDark,
                 unfocusedTextColor = VerexTextDark
-            )
+            ),
+            modifier = Modifier.fillMaxWidth().height(56.dp)
         )
 
+        // Campo Peso Estimado con borde redondeado y fondo blanco
         OutlinedTextField(
             value = pesoGramos,
             onValueChange = { pesoGramos = it },
-            label = { Text("Peso Estimado (Gramos)") },
+            placeholder = { Text("Peso Estimado (Gramos)", color = Color.Gray) },
+            singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = VerexInputGray,
-                unfocusedContainerColor = VerexInputGray,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
                 focusedTextColor = VerexTextDark,
                 unfocusedTextColor = VerexTextDark
-            )
+            ),
+            modifier = Modifier.fillMaxWidth().height(56.dp)
         )
 
         Text("Tipo de Joya:", color = VerexWhite, fontWeight = FontWeight.SemiBold)
@@ -426,6 +442,7 @@ fun FormularioNuevoProducto(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Botón Guardar Joya en Catálogo con fondo blanco y letras oscuras
         Button(
             onClick = {
                 val precio = precioBase.toDoubleOrNull() ?: 0.0
@@ -458,14 +475,17 @@ fun FormularioNuevoProducto(
                             Toast.makeText(context, "Error al guardar en base de datos", Toast.LENGTH_SHORT).show()
                         }
                     }
+                } else {
+                    Toast.makeText(context, "Por favor complete los campos obligatorios", Toast.LENGTH_SHORT).show()
                 }
             },
+            shape = CircleShape,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = VerexGreenDark)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
         ) {
-            Text("Guardar Joya en Catálogo", color = VerexWhite, fontWeight = FontWeight.Bold)
+            Text("Guardar Joya en Catálogo", color = VerexTextDark, fontWeight = FontWeight.Bold, fontSize = 15.sp)
         }
     }
 }

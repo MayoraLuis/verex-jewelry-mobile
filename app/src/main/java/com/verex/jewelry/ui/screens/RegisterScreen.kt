@@ -1,6 +1,7 @@
 package com.verex.jewelry.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -18,17 +19,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.verex.jewelry.AuthManager
 import com.verex.jewelry.R
 import com.verex.jewelry.ui.theme.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onRegisterSuccess: (String) -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
@@ -37,8 +36,7 @@ fun RegisterScreen(
     var estaCargando by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
-    val auth = remember { FirebaseAuth.getInstance() }
-    val firestore = remember { FirebaseFirestore.getInstance() }
+    val authManager = remember { AuthManager() }
 
     Scaffold(
         containerColor = VerexGreen
@@ -55,21 +53,21 @@ fun RegisterScreen(
                 painter = painterResource(id = R.drawable.logo),
                 contentDescription = "Logo Verex",
                 modifier = Modifier
-                    .fillMaxWidth(0.70f)
-                    .height(95.dp),
+                    .fillMaxWidth(0.75f)
+                    .height(110.dp),
                 contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Crear Cuenta",
+                text = "Bienvenidos",
                 color = VerexWhite,
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Campo Nombre Completo
             OutlinedTextField(
@@ -78,24 +76,22 @@ fun RegisterScreen(
                     nombre = it
                     mensajeError = null
                 },
-                label = { Text("Nombre Completo") },
+                placeholder = { Text("Nombre completo", color = Color.Gray) },
                 singleLine = true,
                 enabled = !estaCargando,
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VerexWhite,
-                    unfocusedBorderColor = VerexWhite.copy(alpha = 0.6f),
-                    focusedLabelColor = VerexWhite,
-                    unfocusedLabelColor = VerexWhite.copy(alpha = 0.8f),
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
                     focusedTextColor = VerexTextDark,
                     unfocusedTextColor = VerexTextDark,
-                    focusedContainerColor = VerexInputGray,
-                    unfocusedContainerColor = VerexInputGray
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Campo Correo Electrónico
             OutlinedTextField(
@@ -104,25 +100,23 @@ fun RegisterScreen(
                     correo = it
                     mensajeError = null
                 },
-                label = { Text("Correo Electrónico") },
+                placeholder = { Text("Correo Electrónico", color = Color.Gray) },
                 singleLine = true,
                 enabled = !estaCargando,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VerexWhite,
-                    unfocusedBorderColor = VerexWhite.copy(alpha = 0.6f),
-                    focusedLabelColor = VerexWhite,
-                    unfocusedLabelColor = VerexWhite.copy(alpha = 0.8f),
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
                     focusedTextColor = VerexTextDark,
                     unfocusedTextColor = VerexTextDark,
-                    focusedContainerColor = VerexInputGray,
-                    unfocusedContainerColor = VerexInputGray
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Campo Contraseña
             OutlinedTextField(
@@ -131,27 +125,25 @@ fun RegisterScreen(
                     contrasena = it
                     mensajeError = null
                 },
-                label = { Text("Contraseña (mínimo 6 caracteres)") },
+                placeholder = { Text("Contraseña (mínimo 6 caracteres)", color = Color.Gray) },
                 singleLine = true,
                 enabled = !estaCargando,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VerexWhite,
-                    unfocusedBorderColor = VerexWhite.copy(alpha = 0.6f),
-                    focusedLabelColor = VerexWhite,
-                    unfocusedLabelColor = VerexWhite.copy(alpha = 0.8f),
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
                     focusedTextColor = VerexTextDark,
                     unfocusedTextColor = VerexTextDark,
-                    focusedContainerColor = VerexInputGray,
-                    unfocusedContainerColor = VerexInputGray
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             )
 
             if (mensajeError != null) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = mensajeError ?: "",
                     color = Color(0xFFFFD2D2),
@@ -160,101 +152,79 @@ fun RegisterScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // Botón de Registro
-            Button(
+            // Botón Ingresar
+            OutlinedButton(
                 onClick = {
                     if (nombre.isBlank() || correo.isBlank() || contrasena.isBlank()) {
                         mensajeError = "Por favor, complete todos los campos."
-                        return@Button
+                        return@OutlinedButton
                     }
                     if (contrasena.length < 6) {
                         mensajeError = "La contraseña debe tener al menos 6 caracteres."
-                        return@Button
+                        return@OutlinedButton
                     }
 
                     estaCargando = true
                     mensajeError = null
 
                     coroutineScope.launch {
-                        try {
-                            // 1. Crear usuario en Firebase Authentication
-                            val authResult = auth.createUserWithEmailAndPassword(
-                                correo.trim(),
-                                contrasena.trim()
-                            ).await()
+                        // Llamada corregida con el nombre exacto y orden de parámetros de tu AuthManager
+                        val resultado = authManager.registrarConCorreo(nombre.trim(), correo.trim(), contrasena.trim())
+                        estaCargando = false
 
-                            val uid = authResult.user?.uid ?: throw Exception("Error al crear usuario")
-
-                            val correoClean = correo.trim().lowercase()
-                            val esAdmin = correoClean == "admin@verex.com" || correoClean.contains("admin")
-                            val rol = if (esAdmin) "admin" else "CLIENTE"
-
-                            // 2. Persistir perfil del usuario en Cloud Firestore
-                            val datosUsuario = hashMapOf(
-                                "id" to uid,
-                                "nombre" to nombre.trim(),
-                                "correo" to correo.trim(),
-                                "rol" to rol
-                            )
-                            firestore.collection("usuarios").document(uid).set(datosUsuario).await()
-
-                            estaCargando = false
-                            onRegisterSuccess()
-                        } catch (e: Exception) {
-                            estaCargando = false
-                            mensajeError = when {
-                                e.message?.contains("email address is already in use", ignoreCase = true) == true ->
-                                    "Este correo ya se encuentra registrado."
-                                e.message?.contains("badly formatted", ignoreCase = true) == true ->
-                                    "El formato del correo es inválido."
-                                else ->
-                                    e.localizedMessage ?: "Ocurrió un error al registrarse."
-                            }
+                        if (resultado.isSuccess) {
+                            val rol = resultado.getOrDefault("CLIENTE")
+                            onRegisterSuccess(rol)
+                        } else {
+                            val e = resultado.exceptionOrNull()
+                            mensajeError = e?.localizedMessage ?: "Error al registrarse"
                         }
                     }
                 },
                 enabled = !estaCargando,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
+                    .fillMaxWidth(0.7f)
+                    .height(44.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = VerexGreenDark)
+                border = BorderStroke(1.dp, Color.White),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VerexWhite)
             ) {
                 if (estaCargando) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(20.dp),
                         color = VerexWhite,
-                        strokeWidth = 2.5.dp
+                        strokeWidth = 2.dp
                     )
                 } else {
                     Text(
-                        text = "Registrarme",
+                        text = "Ingresar",
                         color = VerexWhite,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Enlace para volver al Login
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "¿Ya tienes cuenta? ",
+                    text = "¿Ya tienes una cuenta? ",
                     color = VerexWhite,
-                    fontSize = 14.sp
+                    fontSize = 13.sp
                 )
                 Text(
                     text = "Inicia sesión",
                     color = VerexWhite,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     modifier = Modifier.clickable(enabled = !estaCargando) {
-                        onNavigateToLogin()
+                        onNavigateBack()
                     }
                 )
             }

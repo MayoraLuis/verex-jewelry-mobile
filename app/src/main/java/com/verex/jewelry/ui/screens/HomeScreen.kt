@@ -1,5 +1,6 @@
 package com.verex.jewelry.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -288,9 +288,11 @@ fun ItemJoyaCatalogo(
     joya: Joya,
     onClick: () -> Unit
 ) {
+    // Tarjeta con fondo claro (VerexInputGray o Blanco) y borde fino blanco
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = VerexGreenDark),
+        colors = CardDefaults.cardColors(containerColor = VerexInputGray),
+        border = BorderStroke(1.dp, Color.White),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
@@ -304,7 +306,7 @@ fun ItemJoyaCatalogo(
                     .fillMaxWidth()
                     .height(110.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color.White.copy(alpha = 0.08f)),
+                    .background(Color.White.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
                 val fallbackRes = if (joya.imagenRes != 0) joya.imagenRes else com.verex.jewelry.R.drawable.logo
@@ -329,9 +331,10 @@ fun ItemJoyaCatalogo(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            // Textos en color oscuro para contrastar perfectamente con el fondo claro de la tarjeta
             Text(
                 text = joya.nombre,
-                color = VerexWhite,
+                color = VerexTextDark,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 maxLines = 1,
@@ -342,8 +345,8 @@ fun ItemJoyaCatalogo(
 
             Text(
                 text = "Desde: $${String.format("%.2f", joya.precioBaseElaboracion)}",
-                color = Color(0xFFFFD700),
-                fontWeight = FontWeight.SemiBold,
+                color = VerexGreenDark,
+                fontWeight = FontWeight.Bold,
                 fontSize = 12.sp
             )
 
@@ -352,13 +355,13 @@ fun ItemJoyaCatalogo(
             Button(
                 onClick = onClick,
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = VerexInputGray),
+                colors = ButtonDefaults.buttonColors(containerColor = VerexGreen),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
                 modifier = Modifier.height(32.dp)
             ) {
                 Text(
                     text = "Ver Detalle",
-                    color = VerexTextDark,
+                    color = VerexWhite,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )

@@ -40,7 +40,7 @@ fun AppNavigation(navController: NavHostController) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
-                onNavigateToLogin = {
+                onNavigateBack = {
                     navController.popBackStack()
                 }
             )

@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,27 +84,41 @@ fun QuoterScreen(
             )
         },
         bottomBar = {
+            // Usamos un Surface fijo en la parte inferior que respeta las barras de navegación del sistema
             Surface(
                 color = VerexGreenDark,
-                tonalElevation = 8.dp
+                tonalElevation = 8.dp,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .navigationBarsPadding() // <- Esto evita que choque con los botones del celular
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column {
-                        Text("Total estimado:", color = VerexWhite.copy(alpha = 0.8f), fontSize = 12.sp)
+                    // Total en una sola línea
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Total: ",
+                            color = VerexWhite,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Text(
                             text = "$${String.format(Locale.getDefault(), "%.2f", precioCalculado)}",
                             color = Color(0xFFFFD700),
-                            fontSize = 20.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
                     }
 
+                    // Botón Añadir al Carrito
                     Button(
                         onClick = {
                             val joyaPersonalizada = when (joya) {
@@ -156,9 +172,18 @@ fun QuoterScreen(
                             Toast.makeText(context, "¡Agregado al carrito!", Toast.LENGTH_SHORT).show()
                             onNavigateToCart()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = VerexInputGray)
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .fillMaxWidth(0.75f)
+                            .height(44.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                     ) {
-                        Text("Agregar al Carrito", color = VerexTextDark, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Añadir al Carrito",
+                            color = VerexTextDark,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
                     }
                 }
             }
@@ -170,6 +195,7 @@ fun QuoterScreen(
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Imagen de la joya
@@ -200,16 +226,33 @@ fun QuoterScreen(
                 }
             }
 
-            Text(
-                text = joya.nombre,
-                color = VerexWhite,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Título y etiqueta de material alineados a la izquierda
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = joya.nombre,
+                    color = VerexWhite,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Selecciona el Material",
+                    color = VerexWhite,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             // Selector de Material
-            Text("Selecciona el Material:", color = VerexWhite, fontWeight = FontWeight.SemiBold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Material.entries.forEach { material ->
                     FilterChip(
                         selected = materialSeleccionado == material,
@@ -220,36 +263,54 @@ fun QuoterScreen(
             }
 
             // Opciones específicas según el tipo de joya
-            when (joya) {
-                is Anillo -> {
-                    Text("Talla del Anillo: $tallaAnillo", color = VerexWhite, fontWeight = FontWeight.SemiBold)
-                    Slider(
-                        value = tallaAnillo.toFloat(),
-                        onValueChange = { tallaAnillo = it.toInt() },
-                        valueRange = 4f..12f,
-                        steps = 7,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFFFFD700),
-                            activeTrackColor = Color(0xFFFFD700)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
+                when (joya) {
+                    is Anillo -> {
+                        Text(
+                            text = "Talla: $tallaAnillo",
+                            color = VerexWhite,
+                            fontWeight = FontWeight.SemiBold,
+                            fontStyle = FontStyle.Italic
                         )
-                    )
-                }
-                is Cadena, is Pulsera -> {
-                    val min = if (joya is Pulsera) 14f else 40f
-                    val max = if (joya is Pulsera) 24f else 70f
-                    Text("Longitud: $longitudCm cm", color = VerexWhite, fontWeight = FontWeight.SemiBold)
-                    Slider(
-                        value = longitudCm.toFloat(),
-                        onValueChange = { longitudCm = it.toInt() },
-                        valueRange = min..max,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFFFFD700),
-                            activeTrackColor = Color(0xFFFFD700)
+                        Slider(
+                            value = tallaAnillo.toFloat(),
+                            onValueChange = { tallaAnillo = it.toInt() },
+                            valueRange = 4f..12f,
+                            steps = 7,
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color(0xFFFFD700),
+                                activeTrackColor = Color(0xFFFFD700)
+                            )
                         )
-                    )
+                    }
+                    is Cadena, is Pulsera -> {
+                        val min = if (joya is Pulsera) 14f else 40f
+                        val max = if (joya is Pulsera) 24f else 70f
+                        Text(
+                            text = "Longitud: $longitudCm cm",
+                            color = VerexWhite,
+                            fontWeight = FontWeight.SemiBold,
+                            fontStyle = FontStyle.Italic
+                        )
+                        Slider(
+                            value = longitudCm.toFloat(),
+                            onValueChange = { longitudCm = it.toInt() },
+                            valueRange = min..max,
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color(0xFFFFD700),
+                                activeTrackColor = Color(0xFFFFD700)
+                            )
+                        )
+                    }
+                    else -> Unit
                 }
-                else -> Unit
             }
+
+            // Espacio inferior extra para asegurar que el contenido scrolleable no quede oculto detrás de la barra fija
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
