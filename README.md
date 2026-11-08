@@ -12,6 +12,38 @@
   </p>
 </div>
 
+---
+
+## ENLACES DE ENTREGA / AVANCE2_FORO_DE_DISCUSIÓN_2
+<div align="center">
+  <table border="1">
+    <!-- Encabezado del Entregable -->
+    <tr bgcolor="#1f2328">
+      <td style="padding: 12px 20px; text-align: center;">
+        <p align="center" style="margin: 0;">
+          <font color="white"><b>🚀 Avance 2: Foro de Discusión 2 (15%)</b><br>
+          <i>Integración de Firebase Authentication y Firestore al proyecto</i></font>
+        </p>
+      </td>
+    </tr>
+    <!-- Datos del Estudiante -->
+    <tr>
+      <td style="padding: 15px 25px; text-align: left;">
+        <p style="margin: 5px 0;">👤 <b>Estudiante:</b> Luis Ernesto Mayora Claros</p>
+        <p style="margin: 5px 0;">🪪 <b>Carnet:</b> MC090391</p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<ul>
+  <li><strong>Repositorio Oficial:</strong> <a href="https://github.com/MayoraLuis/verex-jewelry-mobile.git">https://github.com/MayoraLuis/verex-jewelry-mobile.git</a></li>
+  <li><strong>Video Demostración (máx. 15 min):</strong> <em>(https://drive.google.com/file/d/1D0eSH83dsdjC_P4747uBVs8BW6Yu-7fF/view?usp=sharing)</em></li>
+  <li><strong>Documento de Investigación (APA 7.ª edición):</strong> <em>(https://drive.google.com/file/d/1nf-9BopqDxJ7_GWZmyGywM087FOwo8ZB/view?usp=sharing)</em></li>
+</ul>
+
+---
+
 ## 📝 Descripción del Proyecto
 
 **Verex Jewelry App** es una aplicación móvil desarrollada nativamente para Android utilizando **Jetpack Compose** y **Kotlin**. Actualmente, la aplicación cuenta con las siguientes características y funcionalidades principales:
@@ -24,7 +56,6 @@
 * **🧮 Cotizador Personalizado:** Herramienta interactiva para calcular el precio de piezas a medida con un desglose claro.
 * **🛒 Carrito de Compras:** Gestión de pedidos con control dinámico de cantidades y la capacidad de adjuntar fotos de referencia desde la galería del dispositivo.
 * **⚙️ Panel Administrativo:** Módulo dedicado con campos de texto estilizados para la creación y publicación de nuevas joyas en el catálogo.
-
 
 ---
 
