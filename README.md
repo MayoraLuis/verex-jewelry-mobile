@@ -8,7 +8,6 @@
     <img src="https://img.shields.io/badge/Kotlin-2.0%2B-blue?logo=kotlin" alt="Kotlin" />
     <img src="https://img.shields.io/badge/Android-Jetpack%20Compose-green?logo=android" alt="Compose" />
     <img src="https://img.shields.io/badge/Backend-Firebase-orange?logo=firebase" alt="Firebase" />
-    <img src="https://img.shields.io/badge/Etapa-3%20Avance%201-purple" alt="Etapa 3" />
   </p>
 </div>
 
